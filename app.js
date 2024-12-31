@@ -14,7 +14,9 @@ const userClient = new WebClient(process.env.SLACK_USER_TOKEN);
 
 const ALLOWED_CHANNELS = ["G01DBHPLK25", "C07FL3G62LF", "C07UBURESHZ"];
 
-const base = new Airtable({ apiKey: process.env.AIRTABLE_PAT }).base(process.env.AIRTABLE_BASE_ID);
+const base = new Airtable({ apiKey: process.env.AIRTABLE_PAT }).base(
+  process.env.AIRTABLE_BASE_ID
+);
 
 const INACTIVITY_CHECK_DELAY = 2 * 60 * 1000;
 const activeThreads = new Map();
@@ -28,7 +30,9 @@ async function checkThreadActivity(threadTs, channelId, client) {
         limit: 100,
       });
 
-      const hasFormSubmission = replies.messages.some((msg) => msg.text && msg.text.includes("Conduct Report Filed :yay:"));
+      const hasFormSubmission = replies.messages.some(
+        (msg) => msg.text && msg.text.includes("Conduct Report Filed :yay:")
+      );
 
       if (!hasFormSubmission) {
         const lastMessageTs = replies.messages[replies.messages.length - 1].ts;
@@ -53,14 +57,22 @@ async function checkThreadActivity(threadTs, channelId, client) {
                 elements: [
                   {
                     type: "button",
-                    text: { type: "plain_text", text: "No, still ongoing", emoji: true },
+                    text: {
+                      type: "plain_text",
+                      text: "No, still ongoing",
+                      emoji: true,
+                    },
                     action_id: "reset_thread_timer",
                     value: JSON.stringify({ threadTs, channelId }),
                     style: "danger",
                   },
                   {
                     type: "button",
-                    text: { type: "plain_text", text: "Submit Report", emoji: true },
+                    text: {
+                      type: "plain_text",
+                      text: "Submit Report",
+                      emoji: true,
+                    },
                     action_id: "open_conduct_modal",
                     style: "primary",
                   },
@@ -79,7 +91,11 @@ async function checkThreadActivity(threadTs, channelId, client) {
 }
 
 app.event("reaction_added", async ({ event, client }) => {
-  if (!ALLOWED_CHANNELS.includes(event.item.channel) || event.reaction !== "ban") return;
+  if (
+    !ALLOWED_CHANNELS.includes(event.item.channel) ||
+    event.reaction !== "ban"
+  )
+    return;
 
   try {
     await client.chat.postMessage({
@@ -96,7 +112,11 @@ app.event("reaction_added", async ({ event, client }) => {
           elements: [
             {
               type: "button",
-              text: { type: "plain_text", text: "File A Report Here", emoji: true },
+              text: {
+                type: "plain_text",
+                text: "File A Report Here",
+                emoji: true,
+              },
               action_id: "open_conduct_modal",
               style: "primary",
             },
@@ -158,7 +178,10 @@ const modalBlocks = [
   {
     type: "input",
     block_id: "resolved_by",
-    label: { type: "plain_text", text: "Who Resolved This? (Thank you btw <3)" },
+    label: {
+      type: "plain_text",
+      text: "Who Resolved This? (Thank you btw <3)",
+    },
     element: {
       type: "multi_users_select",
       action_id: "resolver_select",
@@ -200,10 +223,14 @@ app.view("conduct_report", async ({ ack, view, client }) => {
     const values = view.state.values;
     const { channel, thread_ts, permalink } = JSON.parse(view.private_metadata);
 
-    const resolvedBy = values.resolved_by.resolver_select.selected_users.map((user) => `<@${user}>`).join(", ");
+    const resolvedBy = values.resolved_by.resolver_select.selected_users
+      .map((user) => `<@${user}>`)
+      .join(", ");
 
     const banDate = values.ban_until.ban_date_input.selected_date
-      ? new Date(values.ban_until.ban_date_input.selected_date).toLocaleDateString("en-GB", {
+      ? new Date(
+          values.ban_until.ban_date_input.selected_date
+        ).toLocaleDateString("en-GB", {
           day: "numeric",
           month: "short",
           year: "numeric",
@@ -214,11 +241,15 @@ app.view("conduct_report", async ({ ack, view, client }) => {
       {
         fields: {
           "Time Of Report": new Date().toISOString(),
-          "Dealt With By": values.resolved_by.resolver_select.selected_users.join(", "),
-          "User Being Dealt With": values.reported_user.user_select.selected_user,
-          "What Did User Do": values.violation_deets.violation_deets_input.value,
+          "Dealt With By":
+            values.resolved_by.resolver_select.selected_users.join(", "),
+          "User Being Dealt With":
+            values.reported_user.user_select.selected_user,
+          "What Did User Do":
+            values.violation_deets.violation_deets_input.value,
           "How Was This Resolved": values.solution_deets.solution_input.value,
-          "If Banned, Until When": values.ban_until.ban_date_input.selected_date || null,
+          "If Banned, Until When":
+            values.ban_until.ban_date_input.selected_date || null,
           "Link To Message": permalink,
         },
       },
@@ -255,13 +286,13 @@ app.view("conduct_report", async ({ ack, view, client }) => {
 
 app.command("/prevreports", async ({ command, ack, client, respond }) => {
   await ack();
-  if(!ALLOWED_CHANNELS.includes(command.channel_id)) {
-  respond({
-text: `You are not in the correct channel for this :P`,
-  response_type: 'ephemeral',
-})
+  if (!ALLOWED_CHANNELS.includes(command.channel_id)) {
+    await respond({
+      text: `You are not in the correct channel for this :P`,
+      response_type: "ephemeral",
+    });
     return;
-}
+  }
   try {
     const [userId, source] = command.text.trim().split(" ");
     if (!userId || !source) {
@@ -271,7 +302,9 @@ text: `You are not in the correct channel for this :P`,
       });
     }
 
-    const cleanUserId = userId.startsWith("<@") ? userId.slice(2, -1).split("|")[0] : userId.replace(/[<@>]/g, "");
+    const cleanUserId = userId.startsWith("<@")
+      ? userId.slice(2, -1).split("|")[0]
+      : userId.replace(/[<@>]/g, "");
 
     if (source.toLowerCase() === "slack") {
       const initialMessage = await client.chat.postMessage({
@@ -294,7 +327,9 @@ text: `You are not in the correct channel for this :P`,
       });
 
       allMessages.sort((a, b) => parseFloat(b.ts) - parseFloat(a.ts));
-      const filteredMessages = allMessages.filter((match) => ALLOWED_CHANNELS.includes(match.channel.id)).slice(0, 20);
+      const filteredMessages = allMessages
+        .filter((match) => ALLOWED_CHANNELS.includes(match.channel.id))
+        .slice(0, 20);
 
       if (!filteredMessages.length) {
         return await client.chat.postMessage({
@@ -324,7 +359,10 @@ text: `You are not in the correct channel for this :P`,
           });
           const timestamp = `${formattedDate} at ${formattedTime}`;
 
-          const shortenedText = match.text.length > 200 ? match.text.substring(0, 200) + "..." : match.text;
+          const shortenedText =
+            match.text.length > 200
+              ? match.text.substring(0, 200) + "..."
+              : match.text;
 
           return {
             type: "section",
@@ -383,7 +421,10 @@ text: `You are not in the correct channel for this :P`,
 
       console.log("Found records:", records.length);
       if (records.length > 0) {
-        console.log("Record User Being Dealt With:", records[0].fields["User Being Dealt With"]);
+        console.log(
+          "Record User Being Dealt With:",
+          records[0].fields["User Being Dealt With"]
+        );
       }
 
       if (!records.length) {
@@ -415,13 +456,19 @@ text: `You are not in the correct channel for this :P`,
       const reportEntries = await Promise.all(
         records.map(async (record) => {
           const fields = record.fields;
-          const date = new Date(fields["Time Of Report"]).toLocaleDateString("en-GB", {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-          });
+          const date = new Date(fields["Time Of Report"]).toLocaleDateString(
+            "en-GB",
+            {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            }
+          );
 
-          const dealtWithBy = await formatUserMentions(fields["Dealt With By"], client);
+          const dealtWithBy = await formatUserMentions(
+            fields["Dealt With By"],
+            client
+          );
 
           let reportText = `*Report from ${date}*
   *Dealt With By:* ${dealtWithBy}
@@ -433,7 +480,9 @@ text: `You are not in the correct channel for this :P`,
         })
       );
 
-      const messageText = `Airtable records for ${userId}:\n\n${reportEntries.join("\n\n")}`;
+      const messageText = `Airtable records for ${userId}:\n\n${reportEntries.join(
+        "\n\n"
+      )}`;
 
       await client.chat.postMessage({
         channel: command.channel_id,
